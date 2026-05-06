@@ -21,17 +21,17 @@ export function simplifyDebts(balances: Balances): Settlement[] {
   while (creditorIndex < creditors.length && debtorIndex < debtors.length) {
     const creditor = creditors[creditorIndex]!;
     const debtor = debtors[debtorIndex]!;
-    const amount = transferAmount(creditor, debtor);
+    const transferCents = transferAmount(creditor, debtor);
 
-    settlements.push(makeSettlement(debtor.id, creditor.id, fromCents(amount)));
+    settlements.push(makeSettlement(debtor.id, creditor.id, fromCents(transferCents)));
 
-    creditor.cents -= amount;
-    debtor.cents -= amount;
+    creditor.cents -= transferCents;
+    debtor.cents -= transferCents;
 
-    if (creditor.cents === 0) {
+    if (isSettled(creditor)) {
       creditorIndex += 1;
     }
-    if (debtor.cents === 0) {
+    if (isSettled(debtor)) {
       debtorIndex += 1;
     }
   }
@@ -57,6 +57,10 @@ function splitPartiesInCents(balances: Balances): { creditors: PartyCents[]; deb
 
 function transferAmount(creditor: PartyCents, debtor: PartyCents): number {
   return Math.min(creditor.cents, debtor.cents);
+}
+
+function isSettled(party: PartyCents): boolean {
+  return party.cents === 0;
 }
 
 function makeSettlement(from: string, to: string, amount: number): Settlement {
