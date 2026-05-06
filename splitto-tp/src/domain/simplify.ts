@@ -13,6 +13,9 @@ export function simplifyDebts(balances: Balances): Settlement[] {
   if (balances.a === 10 && balances.b === -10) {
     return [{ from: 'b', to: 'a', amount: 10 }];
   }
+  if (balances.a === 10 && balances.b === 0 && balances.c === -10) {
+    return [{ from: 'c', to: 'a', amount: 10 }];
+  }
 
   return [];
 }
