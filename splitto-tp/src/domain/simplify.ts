@@ -9,10 +9,10 @@
 
 import type { Balances, Settlement } from './types';
 
-type Party = { id: string; amount: number };
+type PartyCents = { id: string; cents: number };
 
 export function simplifyDebts(balances: Balances): Settlement[] {
-  const { creditors, debtors } = splitParties(balances);
+  const { creditors, debtors } = splitPartiesInCents(balances);
 
   const settlements: Settlement[] = [];
   let creditorIndex = 0;
@@ -23,15 +23,15 @@ export function simplifyDebts(balances: Balances): Settlement[] {
     const debtor = debtors[debtorIndex]!;
     const amount = transferAmount(creditor, debtor);
 
-    settlements.push(makeSettlement(debtor.id, creditor.id, amount));
+    settlements.push(makeSettlement(debtor.id, creditor.id, fromCents(amount)));
 
-    creditor.amount -= amount;
-    debtor.amount -= amount;
+    creditor.cents -= amount;
+    debtor.cents -= amount;
 
-    if (creditor.amount === 0) {
+    if (creditor.cents === 0) {
       creditorIndex += 1;
     }
-    if (debtor.amount === 0) {
+    if (debtor.cents === 0) {
       debtorIndex += 1;
     }
   }
@@ -39,25 +39,34 @@ export function simplifyDebts(balances: Balances): Settlement[] {
   return settlements;
 }
 
-function splitParties(balances: Balances): { creditors: Party[]; debtors: Party[] } {
-  const creditors: Party[] = [];
-  const debtors: Party[] = [];
+function splitPartiesInCents(balances: Balances): { creditors: PartyCents[]; debtors: PartyCents[] } {
+  const creditors: PartyCents[] = [];
+  const debtors: PartyCents[] = [];
 
   for (const [memberId, balance] of Object.entries(balances)) {
-    if (balance > 0) {
-      creditors.push({ id: memberId, amount: balance });
-    } else if (balance < 0) {
-      debtors.push({ id: memberId, amount: -balance });
+    const cents = toCents(balance);
+    if (cents > 0) {
+      creditors.push({ id: memberId, cents });
+    } else if (cents < 0) {
+      debtors.push({ id: memberId, cents: -cents });
     }
   }
 
   return { creditors, debtors };
 }
 
-function transferAmount(creditor: Party, debtor: Party): number {
-  return Math.min(creditor.amount, debtor.amount);
+function transferAmount(creditor: PartyCents, debtor: PartyCents): number {
+  return Math.min(creditor.cents, debtor.cents);
 }
 
 function makeSettlement(from: string, to: string, amount: number): Settlement {
   return { from, to, amount };
+}
+
+function toCents(amount: number): number {
+  return Math.round(amount * 100);
+}
+
+function fromCents(cents: number): number {
+  return cents / 100;
 }
