@@ -8,4 +8,10 @@ describe('simplifyDebts', () => {
       { from: 'b', to: 'a', amount: 10 },
     ]);
   });
+
+  it('triangle: ne passe pas par un intermédiaire inutile', () => {
+    expect(simplifyDebts({ a: 10, b: 0, c: -10 })).toEqual([
+      { from: 'c', to: 'a', amount: 10 },
+    ]);
+  });
 });
