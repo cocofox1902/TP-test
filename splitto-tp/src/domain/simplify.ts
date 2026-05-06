@@ -9,32 +9,21 @@
 
 import type { Balances, Settlement } from './types';
 
-export function simplifyDebts(balances: Balances): Settlement[] {
-  const creditors: Array<{ id: string; amount: number }> = [];
-  const debtors: Array<{ id: string; amount: number }> = [];
+type Party = { id: string; amount: number };
 
-  for (const [memberId, balance] of Object.entries(balances)) {
-    if (balance > 0) {
-      creditors.push({ id: memberId, amount: balance });
-    } else if (balance < 0) {
-      debtors.push({ id: memberId, amount: -balance });
-    }
-  }
+export function simplifyDebts(balances: Balances): Settlement[] {
+  const { creditors, debtors } = splitParties(balances);
 
   const settlements: Settlement[] = [];
   let creditorIndex = 0;
   let debtorIndex = 0;
 
   while (creditorIndex < creditors.length && debtorIndex < debtors.length) {
-    const creditor = creditors[creditorIndex];
-    const debtor = debtors[debtorIndex];
-    const amount = Math.min(creditor.amount, debtor.amount);
+    const creditor = creditors[creditorIndex]!;
+    const debtor = debtors[debtorIndex]!;
+    const amount = transferAmount(creditor, debtor);
 
-    settlements.push({
-      from: debtor.id,
-      to: creditor.id,
-      amount,
-    });
+    settlements.push(makeSettlement(debtor.id, creditor.id, amount));
 
     creditor.amount -= amount;
     debtor.amount -= amount;
@@ -48,4 +37,27 @@ export function simplifyDebts(balances: Balances): Settlement[] {
   }
 
   return settlements;
+}
+
+function splitParties(balances: Balances): { creditors: Party[]; debtors: Party[] } {
+  const creditors: Party[] = [];
+  const debtors: Party[] = [];
+
+  for (const [memberId, balance] of Object.entries(balances)) {
+    if (balance > 0) {
+      creditors.push({ id: memberId, amount: balance });
+    } else if (balance < 0) {
+      debtors.push({ id: memberId, amount: -balance });
+    }
+  }
+
+  return { creditors, debtors };
+}
+
+function transferAmount(creditor: Party, debtor: Party): number {
+  return Math.min(creditor.amount, debtor.amount);
+}
+
+function makeSettlement(from: string, to: string, amount: number): Settlement {
+  return { from, to, amount };
 }
