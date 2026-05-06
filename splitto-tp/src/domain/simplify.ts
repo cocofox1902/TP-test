@@ -10,12 +10,42 @@
 import type { Balances, Settlement } from './types';
 
 export function simplifyDebts(balances: Balances): Settlement[] {
-  if (balances.a === 10 && balances.b === -10) {
-    return [{ from: 'b', to: 'a', amount: 10 }];
-  }
-  if (balances.a === 10 && balances.b === 0 && balances.c === -10) {
-    return [{ from: 'c', to: 'a', amount: 10 }];
+  const creditors: Array<{ id: string; amount: number }> = [];
+  const debtors: Array<{ id: string; amount: number }> = [];
+
+  for (const [memberId, balance] of Object.entries(balances)) {
+    if (balance > 0) {
+      creditors.push({ id: memberId, amount: balance });
+    } else if (balance < 0) {
+      debtors.push({ id: memberId, amount: -balance });
+    }
   }
 
-  return [];
+  const settlements: Settlement[] = [];
+  let creditorIndex = 0;
+  let debtorIndex = 0;
+
+  while (creditorIndex < creditors.length && debtorIndex < debtors.length) {
+    const creditor = creditors[creditorIndex];
+    const debtor = debtors[debtorIndex];
+    const amount = Math.min(creditor.amount, debtor.amount);
+
+    settlements.push({
+      from: debtor.id,
+      to: creditor.id,
+      amount,
+    });
+
+    creditor.amount -= amount;
+    debtor.amount -= amount;
+
+    if (creditor.amount === 0) {
+      creditorIndex += 1;
+    }
+    if (debtor.amount === 0) {
+      debtorIndex += 1;
+    }
+  }
+
+  return settlements;
 }
