@@ -21,4 +21,11 @@ describe('simplifyDebts', () => {
       { from: 'c', to: 'a', amount: 10 },
     ]);
   });
+
+  it('gère correctement les décimaux (0.3, 0.2, 0.1) sans erreur flottante', () => {
+    expect(simplifyDebts({ a: 0.3, b: -0.2, c: -0.1 })).toEqual([
+      { from: 'b', to: 'a', amount: 0.2 },
+      { from: 'c', to: 'a', amount: 0.1 },
+    ]);
+  });
 });
