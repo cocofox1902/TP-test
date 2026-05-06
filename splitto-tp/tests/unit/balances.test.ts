@@ -158,4 +158,108 @@ describe('computeBalances', () => {
       charlie: 0,
     });
   });
+
+  it('keeps full credit on payer when equal split has no beneficiaries', () => {
+    const e = expense({
+      amount: 25,
+      paidBy: alice.id,
+      split: { mode: 'equal', beneficiaries: [] },
+    });
+
+    expect(computeBalances(group, [e])).toEqual({
+      alice: 25,
+      bob: 0,
+      charlie: 0,
+    });
+  });
+
+  it('ignores non-positive ratios in weighted split', () => {
+    const e = expense({
+      amount: 60,
+      paidBy: alice.id,
+      split: { mode: 'weighted', weights: { alice: 0, bob: -2, charlie: 3 } },
+    });
+
+    expect(computeBalances(group, [e])).toEqual({
+      alice: 60,
+      bob: 0,
+      charlie: -60,
+    });
+  });
+
+  it('returns no split deductions for zero total in percentage mode', () => {
+    const e = expense({
+      amount: 0,
+      paidBy: bob.id,
+      split: { mode: 'percentage', percentages: { alice: 40, bob: 60 } },
+    });
+
+    expect(computeBalances(group, [e])).toEqual({
+      alice: 0,
+      bob: 0,
+      charlie: 0,
+    });
+  });
+
+  it('distributes equal split remainder cents deterministically', () => {
+    const e = expense({
+      amount: 100,
+      paidBy: alice.id,
+      split: { mode: 'equal', beneficiaries: [alice.id, bob.id, charlie.id] },
+    });
+
+    expect(computeBalances(group, [e])).toEqual({
+      alice: 66.66,
+      bob: -33.33,
+      charlie: -33.33,
+    });
+  });
+
+  it('returns all credit to payer when weighted split has no positive ratio', () => {
+    const e = expense({
+      amount: 60,
+      paidBy: alice.id,
+      split: { mode: 'weighted', weights: { alice: 0, bob: -1, charlie: 0 } },
+    });
+
+    expect(computeBalances(group, [e])).toEqual({
+      alice: 60,
+      bob: 0,
+      charlie: 0,
+    });
+  });
+
+  it('allocates weighted remainder to highest fractional share', () => {
+    const e = expense({
+      amount: 100,
+      paidBy: alice.id,
+      split: { mode: 'weighted', weights: { alice: 1, bob: 2, charlie: 3 } },
+    });
+
+    expect(computeBalances(group, [e])).toEqual({
+      alice: 83.33,
+      bob: -33.33,
+      charlie: -50,
+    });
+  });
+
+  it('keeps balances normalized to cents after many tiny expenses', () => {
+    const expenses: Expense[] = [];
+    for (let i = 0; i < 20; i += 1) {
+      expenses.push(
+        expense({
+          id: `tiny-${i}`,
+          amount: 0.1,
+          paidBy: i % 2 === 0 ? alice.id : bob.id,
+          split: { mode: 'equal', beneficiaries: [alice.id, bob.id] },
+        }),
+      );
+    }
+
+    expect(computeBalances(group, expenses)).toEqual({
+      alice: 0,
+      bob: 0,
+      charlie: 0,
+    });
+  });
 });

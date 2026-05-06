@@ -28,4 +28,22 @@ describe('simplifyDebts', () => {
       { from: 'c', to: 'a', amount: 0.1 },
     ]);
   });
+
+  it('répartit un débiteur unique vers plusieurs créditeurs', () => {
+    expect(simplifyDebts({ a: 15, b: 5, c: -20 })).toEqual([
+      { from: 'c', to: 'a', amount: 15 },
+      { from: 'c', to: 'b', amount: 5 },
+    ]);
+  });
+
+  it('répartit plusieurs débiteurs vers un créditeur unique', () => {
+    expect(simplifyDebts({ a: 20, b: -15, c: -5 })).toEqual([
+      { from: 'b', to: 'a', amount: 15 },
+      { from: 'c', to: 'a', amount: 5 },
+    ]);
+  });
+
+  it("ignore les soldes nuls et retourne une liste vide si tout est équilibré", () => {
+    expect(simplifyDebts({ a: 0, b: 0, c: 0 })).toEqual([]);
+  });
 });
