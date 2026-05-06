@@ -14,4 +14,11 @@ describe('simplifyDebts', () => {
       { from: 'c', to: 'a', amount: 10 },
     ]);
   });
+
+  it('4 personnes: produit 2 règlements minimum', () => {
+    expect(simplifyDebts({ a: 30, b: -20, c: -10, d: 0 })).toEqual([
+      { from: 'b', to: 'a', amount: 20 },
+      { from: 'c', to: 'a', amount: 10 },
+    ]);
+  });
 });
